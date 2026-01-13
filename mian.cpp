@@ -7,20 +7,34 @@
 
 // Класс пользователя
 class User {
-protected:
+protected: // Модификатор доступа: члены доступны в этом классе и в классах-наследниках
     int id;
     std::string name;
     std::string role;
 
 public:
+    // Инициализирует все поля при создании объекта
     User(int id, const std::string& name, const std::string& role)
         : id(id), name(name), role(role) {
     }
+    //  this->id = id;     
+    //  this->name = name;
+    //  this->role = role;
+    //  Это присваивание, а не инициализация: менее эффективно
 
+    // Виртуальный деструктор
+    // virtual - гарантирует правильное удаление объектов классов-наследников
+    // = default - использует деструктор по умолчанию (автоматически сгенерированный компилятором)
     virtual ~User() = default;
 
+    // Чисто виртуальная функция (абстрактный метод)
+    // = 0 означает, что функция не имеет реализации в этом классе
+    // Любой класс-наследник ДОЛЖЕН реализовать этот метод
+    // Это делает класс User абстрактным - нельзя создать объект этого класса напрямую
     virtual void showMenu(pqxx::connection* conn) = 0;
 
+    // Геттеры (методы доступа к приватным полям)
+    // const в конце означает, что метод не изменяет состояние объекта
     int getId() const { return id; }
     std::string getName() const { return name; }
     std::string getRole() const { return role; }
@@ -192,9 +206,18 @@ void managerApproveOrder(pqxx::connection* conn) {
 
     try {
         pqxx::work txn(*conn);
-        txn.exec("UPDATE orders SET status = 'processing' "
+        txn.exec("UPDATE orders SET status = 'completed' "
             "WHERE order_id = " + txn.quote(order_id) +
-            " AND status = 'pending'");
+            " AND status = 'processing'");
+
+        // Сохраняем историю
+        txn.exec(
+            "INSERT INTO order_status_history (order_id, new_status) "
+            "SELECT " + txn.quote(order_id) + ", 'completed' "
+            "WHERE NOT EXISTS ("
+            "SELECT 1 FROM orders WHERE order_id = " + txn.quote(order_id) +
+            " AND status = 'comleted')"
+        );
         txn.commit();
         std::cout << "Заказ утвержден\n";
     }
