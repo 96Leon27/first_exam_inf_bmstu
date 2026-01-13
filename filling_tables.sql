@@ -6,5 +6,6 @@ INSERT INTO users (name, email, role) VALUES
     );
 
 /* additional */
-INSERT INTO products(name, price, stock_quantity)
-	  VALUES ('Сок Добрый Мультифрукт 1л', 139, 100);
+INSERT INTO products(name, price, stock_quantity) VALUES 
+	('Сок Добрый Мультифрукт 1л', 139, 100),
+	('Дартс', 300, 10);
